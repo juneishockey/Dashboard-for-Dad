@@ -989,7 +989,8 @@ const QUOTES = [
 })();
 
 /* ---------- Calendar ---------- */
-(function renderCalendar(){
+/* ---------- Calendar ---------- */
+function renderCalendar() {
   const c = document.getElementById("calendarContainer");
 
   if (!CONFIG.googleClientId) {
@@ -997,7 +998,6 @@ const QUOTES = [
     return;
   }
 
-  // 로그인 버튼 먼저 표시
   c.innerHTML = `
     <div style="padding: 40px 22px; text-align: center;">
       <div id="googleSignInBtn"></div>
@@ -1026,7 +1026,7 @@ const QUOTES = [
     });
   }
 
-  google.accounts.oauth2.initTokenClient({
+  const client = google.accounts.oauth2.initTokenClient({
     client_id: CONFIG.googleClientId,
     scope: "https://www.googleapis.com/auth/calendar.readonly",
     callback: (res) => {
@@ -1034,9 +1034,20 @@ const QUOTES = [
       loadCalendar(res.access_token);
     },
     prompt: ""
-  }).requestAccessToken();
+  });
 
-})();
+  const btn = document.getElementById("googleSignInBtn");
+  btn.innerHTML = `<button onclick="this.disabled=true; window._calClient.requestAccessToken();" 
+    style="background:var(--accent);color:#000;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+    구글 캘린더 연동하기
+  </button>`;
+  window._calClient = client;
+}
+
+// google 라이브러리 로드 후 실행
+window.addEventListener("load", () => {
+  setTimeout(renderCalendar, 500);
+});
 
 /* ---------- Stock: TradingView Ticker Tape + Mini Chart ---------- */
 (function renderTicker(){
