@@ -565,6 +565,8 @@
   }
   @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 </style>
+     <script src="https://accounts.google.com/gsi/client" async defer></script>
+     
 </head>
 <body>
 
@@ -737,6 +739,8 @@ const CONFIG = {
   //    비워두면 설정 안내가 표시됩니다.
   calendarSrc: "",     // 예: "juneishockey%40gmail.com"
   calendarTZ: "Asia/Seoul",
+     googleClientId: "545422338884-5h3pdpnv34l7f427q0o1dgua2hou6sci.apps.googleusercontent.com",
+     
 
   // 4) 사진 — photos/ 폴더에 넣은 파일 경로
   //    photos/ 폴더를 index.html 과 같은 위치에 만들고 사진을 넣어주세요.
@@ -987,21 +991,51 @@ const QUOTES = [
 /* ---------- Calendar ---------- */
 (function renderCalendar(){
   const c = document.getElementById("calendarContainer");
-  if (!CONFIG.calendarSrc) {
-    c.innerHTML = `
-      <div class="calendar-setup">
-        아직 구글 캘린더가 연결되지 않았어요.<br/><br/>
-        Google Calendar → 설정 → 내 캘린더 선택 → <b>캘린더 통합</b> →<br/>
-        “이 캘린더 삽입” 의 <code>src=...</code> 값을 복사해<br/>
-        아래 스크립트 <code>CONFIG.calendarSrc</code> 에 넣어주세요.
-      </div>`;
+
+  if (!CONFIG.googleClientId) {
+    c.innerHTML = `<div class="calendar-setup">Client ID가 없어요.</div>`;
     return;
   }
-  const src = `https://calendar.google.com/calendar/embed?src=${CONFIG.calendarSrc}&ctz=${encodeURIComponent(CONFIG.calendarTZ)}&mode=AGENDA&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&showTz=0&bgcolor=%23ffffff`;
-  const iframe = document.createElement("iframe");
-  iframe.className = "calendar-frame";
-  iframe.src = src;
-  c.appendChild(iframe);
+
+  // 로그인 버튼 먼저 표시
+  c.innerHTML = `
+    <div style="padding: 40px 22px; text-align: center;">
+      <div id="googleSignInBtn"></div>
+      <div id="calendarEvents" style="margin-top: 16px;"></div>
+    </div>`;
+
+  function loadCalendar(token) {
+    fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=10&orderBy=startTime&singleEvents=true&timeMin=${new Date().toISOString()}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(r => r.json())
+    .then(data => {
+      const el = document.getElementById("calendarEvents");
+      if (!data.items || !data.items.length) {
+        el.innerHTML = `<div style="color:var(--text-mute);font-size:13px;">오늘 일정이 없어요.</div>`;
+        return;
+      }
+      el.innerHTML = data.items.map(ev => {
+        const start = ev.start.dateTime || ev.start.date;
+        const time = new Date(start).toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit" });
+        return `<div style="padding:10px 0; border-bottom:1px solid var(--line);">
+          <div style="font-size:14px;color:var(--text);font-weight:500;">${ev.summary}</div>
+          <div style="font-size:12px;color:var(--text-mute);margin-top:2px;">${time}</div>
+        </div>`;
+      }).join("");
+    });
+  }
+
+  google.accounts.oauth2.initTokenClient({
+    client_id: CONFIG.googleClientId,
+    scope: "https://www.googleapis.com/auth/calendar.readonly",
+    callback: (res) => {
+      document.getElementById("googleSignInBtn").style.display = "none";
+      loadCalendar(res.access_token);
+    },
+    prompt: ""
+  }).requestAccessToken();
+
 })();
 
 /* ---------- Stock: TradingView Ticker Tape + Mini Chart ---------- */
