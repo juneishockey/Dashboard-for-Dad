@@ -1001,16 +1001,16 @@ function renderCalendar() {
   c.innerHTML = `
     <div style="padding: 40px 22px; text-align: center;">
       <div id="googleSignInBtn"></div>
-      <div id="calendarEvents" style="margin-top: 16px;"></div>
+      <div id="calendarEvents" style="margin-top: 16px; text-align: left;"></div>
     </div>`;
 
- function loadCalendar(token) {
-    // 1. 지금 시간과 오늘 자정(밤 11시 59분 59초) 시간 구하기
+  function loadCalendar(token) {
+    // 1. 현재 시간과 오늘 자정(23:59:59) 계산
     const now = new Date();
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    // 2. URL에 timeMax를 추가하여 오늘 안으로 끝나는 일정만 가져오도록 설정
+    // 2. timeMax를 추가하여 오늘 안으로 끝나는 일정만 가져오도록 API 주소 수정
     const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=10&orderBy=startTime&singleEvents=true&timeMin=${now.toISOString()}&timeMax=${endOfDay.toISOString()}`;
 
     fetch(url, {
@@ -1019,32 +1019,31 @@ function renderCalendar() {
     .then(r => r.json())
     .then(data => {
       const el = document.getElementById("calendarEvents");
+      
+      // 일정이 없을 때
       if (!data.items || !data.items.length) {
-        // 일정이 없을 때 보여줄 메시지
-        el.innerHTML = `<div style="color:var(--text-mute);font-size:13px;padding:10px 0;text-align:center;">오늘 남은 일정이 없어요. 푹 쉬세요!</div>`;
+        el.innerHTML = `<div style="color:var(--text-mute);font-size:13px; text-align:center;">오늘 남은 일정이 없어요.</div>`;
         return;
       }
       
+      // 일정이 있을 때
       el.innerHTML = data.items.map(ev => {
-        // 3. 종일 일정(시간 없음)인지 특정 시간 일정인지 구분
-        const isAllDay = !ev.start.dateTime;
         const start = ev.start.dateTime || ev.start.date;
+        const isAllDay = !ev.start.dateTime; // dateTime이 없으면 종일 일정
         
-        let timeString = "종일";
-        if (!isAllDay) {
-          timeString = new Date(start).toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit" });
-        }
-
+        // 종일 일정 처리
+        const time = isAllDay ? "종일" : new Date(start).toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit" });
+        
         return `<div style="padding:10px 0; border-bottom:1px solid var(--line);">
           <div style="font-size:14px;color:var(--text);font-weight:500;">${ev.summary}</div>
-          <div style="font-size:12px;color:var(--text-mute);margin-top:2px;">${timeString}</div>
+          <div style="font-size:12px;color:var(--text-mute);margin-top:2px;">${time}</div>
         </div>`;
       }).join("");
     })
     .catch(err => {
       console.error("Calendar fetch error:", err);
       const el = document.getElementById("calendarEvents");
-      el.innerHTML = `<div style="color:var(--neg);font-size:13px;">일정을 불러오는데 실패했습니다.</div>`;
+      el.innerHTML = `<div style="color:var(--neg);font-size:13px; text-align:center;">일정을 불러오지 못했습니다.</div>`;
     });
   }
 
@@ -1070,7 +1069,7 @@ function renderCalendar() {
 window.addEventListener("load", () => {
   setTimeout(renderCalendar, 500);
 });
-
+     
 /* ---------- Stock: TradingView Ticker Tape + Mini Chart ---------- */
 (function renderTicker(){
   const mount = document.getElementById("tvWidget");
