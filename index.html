@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>둥근해가 떴읍니다 ㅋ</title>
+
+<!-- ==========================================================
+     아빠를 위한 대시보드 — 생일 선물
+     ──────────────────────────────────────────────────────────
+     1) 아빠 성함과 생일 메시지: 아래 CONFIG.dadName / CONFIG.message 수정
+     2) 구글 캘린더: CONFIG.calendarSrc 에 아빠의 Google Calendar
+        "공개 주소 — iCal 형식" 또는 embed src 값을 넣어주세요.
+        (Google Calendar → 설정 → 내 캘린더 → 캘린더 통합 → "이 캘린더 삽입" 에서 src 복사)
+     3) 사진: 같은 폴더에 photos/ 폴더를 만들고 사진 파일을 넣은 뒤
+        CONFIG.photos 배열에 파일 경로를 추가해주세요.
+        예) 'photos/sample1.jpg'
+     4) 주식 종목/지수: CONFIG.tickers 에서 추가·제거 가능
+     ========================================================== -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+KR:wght@400;600;900&family=Pretendard:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.454.0/font/lucide.css" />
+
+<style>
+  :root {
+    --bg-0: #0f1116;
+    --bg-1: #161922;
+    --bg-2: #1d212c;
+    --bg-3: #262b38;
+    --line: rgba(255,255,255,0.07);
+    --line-strong: rgba(255,255,255,0.12);
+    --text: #ecebe6;
+    --text-dim: #a6a59f;
+    --text-mute: #6f6e6a;
+    --accent: #d4a574;        /* 따뜻한 골드 */
+    --accent-2: #e8b98a;
+    --accent-soft: rgba(212,165,116,0.12);
+    --pos: #7fc598;
+    --neg: #e38a7c;
+    --radius: 18px;
+    --radius-sm: 12px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background: var(--bg-0); color: var(--text); font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at top left, rgba(212,165,116,0.08), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(127,197,152,0.04), transparent 50%),
+      var(--bg-0);
+  }
+
+  .app {
+    max-width: 1680px;
+    margin: 0 auto;
+    padding: 32px 40px 60px;
+  }
+
+  /* ========== HEADER ========== */
+  header.hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 8px 4px 28px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 28px;
+  }
+  .hero-left .eyebrow {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .hero-left h1 {
+    font-family: "Noto Serif KR", serif;
+    font-weight: 600;
+    font-size: 42px;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+  .hero-left h1 .name {
+    color: var(--accent);
+  }
+  .hero-left .today {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--text-dim);
+    letter-spacing: 0.3px;
+  }
+  .hero-right {
+    text-align: right;
+    color: var(--text-dim);
+    font-size: 13px;
+    letter-spacing: 0.3px;
+  }
+  .hero-right .weather-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  /* ========== GRID ========== */
+  .grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1.4fr 1.1fr;
+    gap: 22px;
+  }
+  @media (max-width: 1200px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+    .col-middle { grid-column: span 2; }
+  }
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; }
+    .col-middle { grid-column: span 1; }
+    .app { padding: 20px; }
+    header.hero { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .hero-right { text-align: left; }
+    .hero-left h1 { font-size: 32px; }
+  }
+
+  .col { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+  .card, .clocks, .clock { contain: layout; }
+
+  /* ========== CARD ========== */
+  .card {
+    background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card h3.card-title {
+    margin: 0 0 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h3.card-title .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  }
+
+  /* ========== CLOCKS ========== */
+.clocks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.clock {
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+.clock .city {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  margin-bottom: 4px;
+}
+.clock .time {
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, "Menlo", "Consolas", monospace;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.5px;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+.clock .time .ampm {
+  font-family: "Pretendard", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-right: 4px;
+  display: inline-block;
+  width: auto;
+  text-align: center;
+}
+.clock .time .digits {
+  display: inline-block;
+  min-width: 0;
+  text-align: left;
+}
+.clock .date {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.clock.primary .time { color: var(--accent); }
+.clock.primary .time .ampm { color: var(--accent-2); opacity: 0.9; }
+
+  /* ========== CHALLENGE ========== */
+  .challenge-card {
+    background: linear-gradient(135deg, rgba(127,197,152,0.08), rgba(127,197,152,0.02));
+    border: 1px solid rgba(127,197,152,0.2);
+  }
+  .challenge-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0 6px;
+    gap: 8px;
+  }
+  .challenge-icon {
+    font-size: 36px;
+    line-height: 1;
+  }
+  .challenge-name {
+    font-family: "Noto Serif KR", serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+  }
+  .challenge-reps {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 16px;
+    color: var(--pos);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ========== WEATHER ========== */
+  .weather-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .weather {
+    padding: 18px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    text-align: left;
+    min-width: 0;
+  }
+  .weather .city {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    margin-bottom: 10px;
+  }
+  .weather .now {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .weather .icon {
+    font-size: 36px;
+    color: var(--accent);
+    width: 42px; height: 42px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .weather .temp {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .weather .temp .unit { font-size: 14px; color: var(--text-dim); margin-left: 2px; }
+  .weather .cond { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .weather .hilo {
+    display: flex; gap: 10px; font-size: 11px; color: var(--text-mute);
+    margin-top: 8px; font-variant-numeric: tabular-nums;
+  }
+  .weather .hilo b { color: var(--text-dim); font-weight: 500; margin-left: 2px; }
+  .weather-chip .icon { font-size: 14px; color: var(--accent); }
+
+  /* ========== PHOTO ========== */
+  .photo-card { padding: 0; }
+  .photo-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--bg-2);
+    overflow: hidden;
+  }
+  .photo-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+  .photo-frame img.active { opacity: 1; }
+  .photo-frame::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 50%, rgba(15,17,22,0.8));
+    pointer-events: none;
+  }
+  .photo-caption {
+    position: absolute;
+    bottom: 16px; left: 20px; right: 20px;
+    z-index: 2;
+    font-family: "Noto Serif KR", serif;
+    font-size: 16px;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  }
+  .photo-empty {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: var(--text-mute);
+    font-size: 13px;
+    gap: 8px;
+    padding: 20px;
+    text-align: center;
+  }
+  .photo-empty i { font-size: 32px; color: var(--text-mute); }
+  .photo-empty code {
+    background: var(--bg-3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .photo-dots {
+    display: flex; justify-content: center; gap: 6px;
+    padding: 14px 0 16px;
+    background: var(--bg-1);
+  }
+  .photo-dots span {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--text-mute);
+    opacity: 0.4;
+    transition: all 0.3s;
+  }
+  .photo-dots span.active { background: var(--accent); opacity: 1; width: 20px; border-radius: 3px; }
+
+  /* ========== QUOTE ========== */
+  .quote-card {
+    background: linear-gradient(135deg, rgba(212,165,116,0.08), rgba(127,197,152,0.04));
+    border: 1px solid rgba(212,165,116,0.2);
+  }
+  .quote-text {
+    font-family: "Noto Serif KR", serif;
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--text);
+    margin: 6px 0 12px;
+    font-weight: 400;
+  }
+  .quote-text::before {
+    content: "\"";
+    font-family: "Playfair Display", serif;
+    font-size: 44px;
+    color: var(--accent);
+    line-height: 0;
+    margin-right: 4px;
+    vertical-align: -12px;
+  }
+  .quote-author {
+    font-size: 13px;
+    color: var(--text-dim);
+    text-align: right;
+    letter-spacing: 0.5px;
+  }
+  .quote-author::before { content: "— "; color: var(--accent); }
+
+  /* ========== MESSAGE ========== */
+  .message-card {
+    position: relative;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(212,165,116,0.15), transparent 50%),
+      linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    border: 1px solid rgba(212,165,116,0.3);
+  }
+  .message-card::before {
+    content: "";
+    position: absolute;
+    top: -2px; left: -2px; right: -2px; bottom: -2px;
+    background: linear-gradient(135deg, transparent, rgba(212,165,116,0.3), transparent);
+    border-radius: var(--radius);
+    z-index: -1;
+    opacity: 0.5;
+  }
+  .message-from {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .message-body {
+    font-family: "Noto Serif KR", serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-line;
+  }
+
+  /* ========== NEWS ========== */
+  .news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 540px;
+    overflow-y: auto;
+    margin: 0 -6px;
+  }
+  .news-list::-webkit-scrollbar { width: 6px; }
+  .news-list::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 3px; }
+  .news-item {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+    color: inherit;
+  }
+  .news-item:hover { background: var(--bg-2); }
+  .news-item:last-child { border-bottom: none; }
+  .news-num {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    color: var(--accent);
+    font-size: 13px;
+    min-width: 22px;
+    margin-top: 2px;
+  }
+  .news-content { flex: 1; min-width: 0; }
+  .news-title {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    font-weight: 500;
+    margin-bottom: 4px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .news-meta {
+    font-size: 11px;
+    color: var(--text-mute);
+    letter-spacing: 0.3px;
+  }
+  .loader { padding: 18px; color: var(--text-mute); font-size: 13px; text-align: center; }
+
+  /* ========== FX ========== */
+  .fx-hero {
+    background: linear-gradient(135deg, rgba(212,165,116,0.14), rgba(212,165,116,0.04));
+    border: 1px solid rgba(212,165,116,0.22);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .fx-hero .fx-code { font-size: 15px; color: var(--accent); font-weight: 700; letter-spacing: 0.5px; }
+  .fx-hero .fx-name { font-size: 11px; color: var(--text-mute); margin-top: 2px; }
+  .fx-hero .fx-rate {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 28px; font-weight: 500;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .fx-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .fx-row:last-child { border-bottom: none; }
+  .fx-pair { display: flex; align-items: center; gap: 10px; }
+  .fx-flag {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--bg-3);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+  }
+  .fx-code {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .fx-name { font-size: 11px; color: var(--text-mute); }
+  .fx-rate {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 16px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .fx-change {
+    font-size: 11px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .fx-change.pos { color: var(--pos); }
+  .fx-change.neg { color: var(--neg); }
+
+  /* ========== STOCK ========== */
+  .stock-card { padding: 0; overflow: hidden; }
+  .stock-card h3.card-title { padding: 22px 22px 0; }
+  .tv-widget { width: 100%; height: 320px; }
+
+  /* ========== CALENDAR ========== */
+  .calendar-card { padding: 0; }
+  .calendar-card h3.card-title { padding: 22px 22px 0; }
+  .calendar-frame {
+    width: 100%; height: 500px;
+    border: none;
+    background: #fff;
+    border-bottom-left-radius: var(--radius);
+    border-bottom-right-radius: var(--radius);
+  }
+  .calendar-setup {
+    padding: 40px 22px;
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .calendar-setup code {
+    background: var(--bg-3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent);
+    font-size: 12px;
+  }
+
+  /* ========== FOOTER ========== */
+  footer.foot {
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 12px;
+    padding: 20px 0;
+    border-top: 1px solid var(--line);
+  }
+  footer.foot .heart { color: var(--accent); }
+
+  /* util */
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg-2), var(--bg-3), var(--bg-2));
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <div class="hero-left">
+      <div class="eyebrow">Good morning</div>
+      <h1>둥근해가 떴습니다, 자리에서 일어나세요 <span class="name" id="dadName">아빠</span>.</h1>
+      <div class="today" id="todayLong"></div>
+    </div>
+    <div class="hero-right">
+      
+    </div>
+  </header>
+
+  <!-- ============ GRID ============ -->
+  <div class="grid">
+
+    <!-- LEFT COLUMN -->
+    <div class="col col-left">
+
+      <!-- Clocks -->
+      <section class="card">
+        <h3 class="card-title"><span class="dot"></span>Time</h3>
+        <div class="clocks">
+          <div class="clock primary">
+            <div class="city">Seattle</div>
+            <div class="time" id="seattleTime">—</div>
+            <div class="date" id="seattleDate">—</div>
+          </div>
+          <div class="clock">
+            <div class="city">Seoul</div>
+            <div class="time" id="seoulTime">—</div>
+            <div class="date" id="seoulDate">—</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Weather -->
+      <section class="card">
+        <h3 class="card-title"><span class="dot"></span>Weather</h3>
+        <div class="weather-grid">
+          <div class="weather" id="weatherSeattle">
+            <div class="city">Seattle</div>
+            <div class="now">
+              <div class="icon"><i class="lucide lucide-loader"></i></div>
+              <div>
+                <div class="temp">—<span class="unit">°C</span></div>
+                <div class="cond">불러오는 중…</div>
+              </div>
+            </div>
+            <div class="hilo"><span>최고<b>—</b></span><span>최저<b>—</b></span></div>
+          </div>
+          <div class="weather" id="weatherSeoul">
+            <div class="city">Seoul</div>
+            <div class="now">
+              <div class="icon"><i class="lucide lucide-loader"></i></div>
+              <div>
+                <div class="temp">—<span class="unit">°C</span></div>
+                <div class="cond">불러오는 중…</div>
+              </div>
+            </div>
+            <div class="hilo"><span>최고<b>—</b></span><span>최저<b>—</b></span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Photo carousel -->
+      <section class="card photo-card">
+        <div class="photo-frame" id="photoFrame">
+          <!-- 사진은 JS 가 photos 배열을 읽어서 채웁니다 -->
+        </div>
+        <div class="photo-dots" id="photoDots"></div>
+      </section>
+
+      
+
+      <!-- Quote -->
+      <section class="card quote-card">
+        <h3 class="card-title"><span class="dot"></span>중요한것은 실천</h3>
+        <div class="quote-text" id="quoteText">—</div>
+        <div class="quote-author" id="quoteAuthor"></div>
+      </section>
+
+    </div>
+
+    <!-- MIDDLE COLUMN -->
+    <div class="col col-middle">
+
+      <!-- Calendar -->
+      <section class="card calendar-card">
+        <h3 class="card-title"><span class="dot"></span>오늘 아빠의 일정</h3>
+        <div id="calendarContainer"></div>
+      </section>
+
+      <!-- Stock chart -->
+      <section class="card stock-card">
+        <h3 class="card-title"><span class="dot"></span>주식 시장~</h3>
+        <div class="tv-widget" id="tvWidget"></div>
+      </section>
+
+      <!-- Challenge -->
+    <section class="card challenge-card">
+      <h3 class="card-title"><span class="dot"></span>오늘의 챌린지</h3>
+      <div class="challenge-body">
+        <div class="challenge-icon" id="challengeIcon">💪</div>
+        <div class="challenge-name" id="challengeName">—</div>
+        <div class="challenge-reps" id="challengeReps">—</div>
+      </div>
+    </section>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="col col-right">
+
+      <!-- Message to Dad -->
+      <section class="card message-card">
+        <h3 class="card-title"><span class="dot"></span>아빠에게</h3>
+        <div class="message-from">— from your son</div>
+        <div class="message-body" id="messageBody">메시지가 여기에 표시됩니다.</div>
+      </section>
+
+      <!-- Exchange rates -->
+      <section class="card">
+        <h3 class="card-title"><span class="dot"></span>환율</h3>
+        <div id="fxList">
+          <div class="loader">환율 불러오는 중…</div>
+        </div>
+      </section>
+
+      <!-- News -->
+      <section class="card">
+        <h3 class="card-title"><span class="dot"></span>세상을 알면 좋다.</h3>
+        <div class="news-list" id="newsList">
+          <div class="loader">뉴스 불러오는 중…</div>
+        </div>
+      </section>
+
+    </div>
+
+  </div>
+
+  <footer class="foot">
+    Seize the day  <span id="buildStamp"></span>
+  </footer>
+</div>
+
+<!-- ======================================================
+     CONFIG — 여기를 직접 수정해서 맞춤 설정하세요
+     ====================================================== -->
+<script>
+const CONFIG = {
+  // 1) 아빠 이름 (호칭)
+  dadName: "아빠",
+
+  // 2) 생일 메시지 — 줄바꿈 그대로 표시됨
+  message: `아빠 오늘도 좋은 하루 되세요.
+
+다같이 화이팅 해봅시다!
+우리는 워낙 성격이 사내대장부여서 그저 허허 하며 웃어넘깁시다
+
+— 아들`,
+
+  // 3) 구글 캘린더 — 공개 캘린더의 "이 캘린더 삽입" src 값
+  //    (Google Calendar → 설정 → 내 캘린더 선택 → 캘린더 통합 → "이 캘린더 삽입" 의 src=... 부분 복사)
+  //    예: "juneishockey%40gmail.com"  또는  "en.south_korea%23holiday%40group.v.calendar.google.com"
+  //    비워두면 설정 안내가 표시됩니다.
+  calendarSrc: "",     // 예: "juneishockey%40gmail.com"
+  calendarTZ: "Asia/Seoul",
+
+  // 4) 사진 — photos/ 폴더에 넣은 파일 경로
+  //    photos/ 폴더를 index.html 과 같은 위치에 만들고 사진을 넣어주세요.
+  photos: [
+    "photos/20160815_145150.JPG",
+    "photos/IMG_2424.JPG",
+    "photos/IMG_2488.JPG",
+    "photos/IMG_3062.JPG",
+    "photos/IMG_3426.JPG",
+    "photos/IMG_3453.JPG",
+    "photos/IMG_5364.JPG",
+    "photos/IMG_5912.JPG",
+    "photos/IMG_6069.JPG",
+    "photos/IMG_6183.JPG",
+    "photos/IMG_6250.JPG",
+    "photos/IMG_6426.JPG",
+    "photos/IMG_8489.JPG",
+    "photos/IMG_8904.JPG",
+    "photos/IMG_2998.jpeg",
+    "photos/IMG_5908.jpeg",
+    
+  ],
+  photoInterval: 7000,   // ms
+
+  // 5) 뉴스 — Google News RSS (언어/지역 코드)
+  newsRSS: "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko",
+  newsCount: 8,
+
+  // 6) 주식 — TradingView 심볼
+  //    예: ["NASDAQ:AAPL","NYSE:BRK.B","KRX:005930"]
+  tickers: [
+    { proName: "FOREXCOM:SPXUSD", title: "S&P 500" },
+    { proName: "FOREXCOM:NSXUSD", title: "Nasdaq 100" },
+    { proName: "FOREXCOM:DJI",    title: "Dow 30"  },
+    { proName: "BITSTAMP:BTCUSD", title: "BTC/USD"  },
+    { proName: "FX_IDC:USDKRW",   title: "USD/KRW" },
+  ],
+};
+</script>
+
+<!-- ======================================================
+     APP LOGIC
+     ====================================================== -->
+<script>
+/* ---------- Header ---------- */
+document.getElementById("dadName").textContent = CONFIG.dadName;
+document.getElementById("messageBody").textContent = CONFIG.message;
+
+(function setToday() {
+  const d = new Date();
+  const fmt = d.toLocaleDateString("ko-KR", { year:"numeric", month:"long", day:"numeric", weekday:"long" });
+  document.getElementById("todayLong").textContent = fmt;
+  document.getElementById("buildStamp").textContent =
+    d.toLocaleDateString("ko-KR", { year:"numeric", month:"long", day:"numeric" });
+})();
+
+/* ---------- Clocks (12시간, 오전/오후) ---------- */
+function padz(n){ return n.toString().padStart(2,"0"); }
+function getTzParts(tz){
+  const fmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz, hour12: false,
+    hour: "2-digit", minute: "2-digit"
+  });
+  const parts = Object.fromEntries(fmt.formatToParts(new Date()).map(p => [p.type, p.value]));
+  let h24 = parseInt(parts.hour, 10);
+  const ampm = h24 >= 12 ? "오후" : "오전";
+  let h12 = h24 % 12;
+  if (h12 === 0) h12 = 12;
+  return { ampm, h: padz(h12), m: parts.minute };
+}
+function updateClock(id, tz){
+  const t = getTzParts(tz);
+  const el = document.getElementById(id + "Time");
+  el.innerHTML = `<span class="ampm">${t.ampm}</span><span class="digits">${t.h}:${t.m}</span>`;
+  const date = new Date().toLocaleDateString("ko-KR", { month:"long", day:"numeric", weekday:"short", timeZone: tz });
+  document.getElementById(id + "Date").textContent = date;
+}
+function tickClocks(){
+  updateClock("seattle", "America/Los_Angeles");
+  updateClock("seoul", "Asia/Seoul");
+}
+tickClocks();
+setInterval(tickClocks, 1000);
+
+/* ---------- Daily Challenge ---------- */
+(function renderChallenge(){
+  const challenges = [
+    { name: "스쿼트", reps: "100개", icon: "🦵" },
+    { name: "푸쉬업", reps: "30개", icon: "💪" },
+    { name: "턱걸이", reps: "20개", icon: "🏋️" },
+    { name: "달리기", reps: "20분", icon: "🏃" },
+    { name: "플랭크", reps: "3분", icon: "🧘" },
+    { name: "버피", reps: "10개", icon: "⚡" },
+    { name: "런지", reps: "각 20개", icon: "🦶" },
+    { name: "크런치", reps: "30개", icon: "🔥" },
+  ];
+
+  // 날짜 기준으로 8일 주기 섞기 — 같은 날엔 항상 같은 운동
+  const seed = Math.floor(Date.now() / 86400000);
+  const weekNum = Math.floor(seed / challenges.length);
+  // weekNum 기준으로 순서 섞기
+  const shuffled = [...challenges];
+  let s = weekNum;
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    const j = Math.abs(s) % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const idx = seed % challenges.length;
+  const today = shuffled[idx];
+
+  document.getElementById("challengeIcon").textContent = today.icon;
+  document.getElementById("challengeName").textContent = today.name;
+  document.getElementById("challengeReps").textContent = today.reps;
+})();
+
+/* ---------- Weather (Open-Meteo, 무료 / 키 필요 없음) ---------- */
+// WMO weather code → (한국어 설명, Lucide 아이콘)
+function wmoToInfo(code){
+  const table = {
+    0:["맑음","sun"],
+    1:["대체로 맑음","sun"], 2:["구름 조금","cloud-sun"], 3:["흐림","cloud"],
+    45:["안개","cloud-fog"], 48:["짙은 안개","cloud-fog"],
+    51:["약한 이슬비","cloud-drizzle"], 53:["이슬비","cloud-drizzle"], 55:["강한 이슬비","cloud-drizzle"],
+    56:["찬 이슬비","cloud-drizzle"], 57:["찬 이슬비","cloud-drizzle"],
+    61:["약한 비","cloud-rain"], 63:["비","cloud-rain"], 65:["강한 비","cloud-rain-wind"],
+    66:["찬 비","cloud-rain"], 67:["찬 비","cloud-rain"],
+    71:["약한 눈","snowflake"], 73:["눈","snowflake"], 75:["강한 눈","snowflake"],
+    77:["싸락눈","snowflake"],
+    80:["소나기","cloud-rain"], 81:["소나기","cloud-rain"], 82:["강한 소나기","cloud-rain-wind"],
+    85:["소낙눈","snowflake"], 86:["강한 소낙눈","snowflake"],
+    95:["천둥번개","cloud-lightning"], 96:["천둥·우박","cloud-lightning"], 99:["천둥·우박","cloud-lightning"],
+  };
+  return table[code] || ["알 수 없음", "cloud"];
+}
+
+async function loadWeather(id, lat, lon, unit){
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+      + `&current=temperature_2m,weather_code,apparent_temperature`
+      + `&daily=temperature_2m_max,temperature_2m_min,weather_code`
+      + `&temperature_unit=${unit === "F" ? "fahrenheit" : "celsius"}`
+      + `&timezone=auto`;
+    const res = await fetch(url).then(r=>r.json());
+    if (!res.current) throw new Error("no data");
+    const [desc, iconName] = wmoToInfo(res.current.weather_code);
+    const temp = Math.round(res.current.temperature_2m);
+    const feels = Math.round(res.current.apparent_temperature);
+    const hi = Math.round(res.daily.temperature_2m_max[0]);
+    const lo = Math.round(res.daily.temperature_2m_min[0]);
+    const unitSym = unit === "F" ? "°F" : "°C";
+    const el = document.getElementById(id);
+    el.querySelector(".icon").innerHTML = `<i class="lucide lucide-${iconName}"></i>`;
+    el.querySelector(".temp").innerHTML = `${temp}<span class="unit">${unitSym}</span>`;
+    el.querySelector(".cond").textContent = `${desc} · 체감 ${feels}${unitSym}`;
+    el.querySelector(".hilo").innerHTML = `<span>최고<b>${hi}${unitSym}</b></span><span>최저<b>${lo}${unitSym}</b></span>`;
+    return { temp, desc, iconName, unitSym };
+  } catch (e) {
+    const el = document.getElementById(id);
+    el.querySelector(".cond").textContent = "불러오기 실패";
+    return null;
+  }
+}
+
+// 시애틀 (미국 단위 °F), 서울 (°C)
+loadWeather("weatherSeattle", 47.6062, -122.3321, "C").then(w => {
+  // 상단 칩도 시애틀 현재 날씨로 채움
+  if (w) {
+    const chip = document.getElementById("seattleChip");
+    chip.innerHTML = `<span class="icon"><i class="lucide lucide-${w.iconName}"></i></span>
+      <span>시애틀 · ${w.desc} · <b style="color:var(--text)">${w.temp}${w.unitSym}</b></span>`;
+  }
+});
+loadWeather("weatherSeoul", 37.5665, 126.9780, "C");
+// 30 분마다 새로고침
+setInterval(() => {
+  loadWeather("weatherSeattle", 47.6062, -122.3321, "C");
+  loadWeather("weatherSeoul", 37.5665, 126.9780, "C");
+}, 30 * 60 * 1000);
+
+/* ---------- Photos ---------- */
+(function initPhotos(){
+  const frame = document.getElementById("photoFrame");
+  const dots = document.getElementById("photoDots");
+  const list = CONFIG.photos || [];
+  if (!list.length) {
+    frame.innerHTML = `
+      <div class="photo-empty">
+        <i class="lucide lucide-image"></i>
+        <div>같은 폴더에 <code>photos/</code> 폴더를 만들고<br/>사진을 넣은 뒤, <code>CONFIG.photos</code> 에 경로를 추가하세요.</div>
+        <div style="font-size:11px;opacity:0.7;">예: <code>photos/with_dad_01.jpg</code></div>
+      </div>`;
+    return;
+  }
+  list.forEach((src, i) => {
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = "";
+    if (i === 0) img.classList.add("active");
+    frame.appendChild(img);
+    const d = document.createElement("span");
+    if (i === 0) d.classList.add("active");
+    dots.appendChild(d);
+  });
+  let idx = 0;
+  setInterval(() => {
+    const imgs = frame.querySelectorAll("img");
+    const ds = dots.querySelectorAll("span");
+    imgs[idx].classList.remove("active");
+    ds[idx].classList.remove("active");
+    idx = (idx + 1) % imgs.length;
+    imgs[idx].classList.add("active");
+    ds[idx].classList.add("active");
+  }, CONFIG.photoInterval);
+})();
+
+/* ---------- Quote of the day ---------- */
+const QUOTES = [
+  { t: "인생에서 가장 중요한 날은 두 날이다. 태어난 날과, 태어난 이유를 깨닫는 날.", a: "마크 트웨인" },
+  { t: "가장 어두운 밤도 끝나고 해는 떠오른다.", a: "빅토르 위고" },
+  { t: "행복은 늘 준비되어 있는 사람의 것이다.", a: "아리스토텔레스" },
+  { t: "걱정을 해서 걱정이 없어지면, 걱정이 없겠네.", a: "티베트 속담" },
+  { t: "천천히 서둘러라.", a: "아우구스투스" },
+  { t: "오늘 할 수 있는 일에 전력을 다하라. 그러면 내일은 한 걸음 진보한다.", a: "아이작 뉴턴" },
+  { t: "가장 강한 자가 살아남는 것이 아니라, 변화에 가장 잘 적응하는 자가 살아남는다.", a: "찰스 다윈" },
+  { t: "우리가 두려워해야 할 것은 두려움 그 자체뿐이다.", a: "프랭클린 루스벨트" },
+  { t: "할 수 있다고 믿는 사람은 그렇게 되고, 할 수 없다고 믿는 사람도 그렇게 된다.", a: "샤를 드 골" },
+  { t: "위대한 일은 작은 일들이 모여 이루어진다.", a: "빈센트 반 고흐" },
+  { t: "지나간 것은 지나간 대로 그런 의미가 있죠.", a: "전인권" },
+  { t: "아버지가 자식에게 해줄 수 있는 가장 큰 일은 자식의 엄마를 사랑하는 일이다.", a: "테오도르 헤스버그" },
+  { t: "나이 듦은 등산과 같다. 오를수록 숨은 차지만 시야는 훨씬 넓어진다.", a: "잉마르 베리만" },
+  { t: "사랑하는 사람과 함께하는 평범한 하루가 인생 최고의 날이다.", a: "영화 <어바웃 타임>" },
+  { t: "천 리 길도 한 걸음부터.", a: "노자" },
+  { t: "가장 큰 영광은 한 번도 실패하지 않는 것이 아니라 실패할 때마다 다시 일어서는 데에 있다.", a: "공자" },
+  { t: "당신의 시간은 한정되어 있다. 그러니 다른 사람의 삶을 사느라 시간을 낭비하지 말라.", a: "스티브 잡스" },
+  { t: "마음이 급하면 바늘허리에 실 매어 쓰랴.", a: "한국 속담" },
+  { t: "하루하루가 선물이다. 그래서 오늘을 present 라 부른다.", a: "엘리너 루스벨트" },
+  { t: "모든 인생은 한 편의 실험이다. 실험이 많을수록 더 좋다.", a: "랄프 왈도 에머슨" },
+];
+(function renderQuote(){
+  const now = new Date();
+  const dayIdx = Math.floor(now / 86400000) % QUOTES.length;
+  const q = QUOTES[dayIdx];
+  document.getElementById("quoteText").textContent = q.t;
+  document.getElementById("quoteAuthor").textContent = q.a;
+})();
+
+/* ---------- Calendar ---------- */
+(function renderCalendar(){
+  const c = document.getElementById("calendarContainer");
+  if (!CONFIG.calendarSrc) {
+    c.innerHTML = `
+      <div class="calendar-setup">
+        아직 구글 캘린더가 연결되지 않았어요.<br/><br/>
+        Google Calendar → 설정 → 내 캘린더 선택 → <b>캘린더 통합</b> →<br/>
+        “이 캘린더 삽입” 의 <code>src=...</code> 값을 복사해<br/>
+        아래 스크립트 <code>CONFIG.calendarSrc</code> 에 넣어주세요.
+      </div>`;
+    return;
+  }
+  const src = `https://calendar.google.com/calendar/embed?src=${CONFIG.calendarSrc}&ctz=${encodeURIComponent(CONFIG.calendarTZ)}&mode=AGENDA&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&showTz=0&bgcolor=%23ffffff`;
+  const iframe = document.createElement("iframe");
+  iframe.className = "calendar-frame";
+  iframe.src = src;
+  c.appendChild(iframe);
+})();
+
+/* ---------- Stock: TradingView Ticker Tape + Mini Chart ---------- */
+(function renderTicker(){
+  const mount = document.getElementById("tvWidget");
+  // Ticker tape (scrolling)
+  const tape = document.createElement("div");
+  tape.className = "tradingview-widget-container";
+  tape.innerHTML = `<div class="tradingview-widget-container__widget"></div>`;
+  mount.appendChild(tape);
+
+  const s = document.createElement("script");
+  s.type = "text/javascript";
+  s.async = true;
+  s.src = "https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js";
+  s.text = JSON.stringify({
+    symbols: CONFIG.tickers,
+    showSymbolLogo: true,
+    isTransparent: true,
+    displayMode: "adaptive",
+    colorTheme: "dark",
+    locale: "kr"
+  });
+  tape.appendChild(s);
+
+  // Mini chart for the first ticker
+  const mini = document.createElement("div");
+  mini.className = "tradingview-widget-container";
+  mini.style.marginTop = "10px";
+  mini.innerHTML = `<div class="tradingview-widget-container__widget"></div>`;
+  mount.appendChild(mini);
+
+  const s2 = document.createElement("script");
+  s2.type = "text/javascript";
+  s2.async = true;
+  s2.src = "https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js";
+  s2.text = JSON.stringify({
+    symbol: CONFIG.tickers[0]?.proName || "FOREXCOM:SPXUSD",
+    width: "100%",
+    height: 220,
+    locale: "kr",
+    dateRange: "3M",
+    colorTheme: "dark",
+    isTransparent: true,
+    autosize: true,
+    largeChartUrl: ""
+  });
+  mini.appendChild(s2);
+})();
+
+/* ---------- Exchange rates (Frankfurter primary, open.er-api fallback) ---------- */
+async function fetchRatesPrimary(){
+  // Frankfurter (ECB 데이터, 무료, 키 불필요)
+  const today = await fetch("https://api.frankfurter.app/latest?from=USD&to=KRW,EUR,JPY,CNY").then(r=>r.json());
+  if (!today.rates) throw new Error("no rates");
+  // 한 주 전 비교
+  const d = new Date(); d.setDate(d.getDate()-7);
+  const dateStr = d.toISOString().slice(0,10);
+  let prev = null;
+  try { prev = await fetch(`https://api.frankfurter.app/${dateStr}?from=USD&to=KRW,EUR,JPY,CNY`).then(r=>r.json()); } catch {}
+  return { today: today.rates, prev: prev && prev.rates ? prev.rates : null };
+}
+async function fetchRatesFallback(){
+  // open.er-api.com — 무료, 키 불필요 (실패 시 대비)
+  const res = await fetch("https://open.er-api.com/v6/latest/USD").then(r=>r.json());
+  if (!res.rates) throw new Error("no rates");
+  const rates = { KRW: res.rates.KRW, EUR: res.rates.EUR, JPY: res.rates.JPY, CNY: res.rates.CNY };
+  return { today: rates, prev: null };
+}
+
+function toKRW(from, rates){
+  // rates: { KRW, EUR, JPY, CNY } — 1 USD 기준
+  if (from === "USD") return rates.KRW;
+  if (!rates[from]) return null;
+  return rates.KRW / rates[from];
+}
+
+async function loadFX(){
+  const list = document.getElementById("fxList");
+  let data = null;
+  try { data = await fetchRatesPrimary(); }
+  catch {
+    try { data = await fetchRatesFallback(); }
+    catch { list.innerHTML = `<div class="loader">환율을 불러오지 못했어요.</div>`; return; }
+  }
+
+  // USD/KRW 히어로
+  const usdKrw = toKRW("USD", data.today);
+  const usdKrwPrev = data.prev ? toKRW("USD", data.prev) : null;
+  let heroChange = "";
+  if (usdKrwPrev) {
+    const d = ((usdKrw - usdKrwPrev) / usdKrwPrev) * 100;
+    const cls = d >= 0 ? "pos" : "neg";
+    heroChange = `<div class="fx-change ${cls}" style="margin-top:4px">${d>=0?"+":""}${d.toFixed(2)}% <span style="color:var(--text-mute)">· 1주</span></div>`;
+  }
+
+  list.innerHTML = `
+    <div class="fx-hero">
+      <div>
+        <div class="fx-code">USD / KRW</div>
+        <div class="fx-name">원/달러 환율</div>
+      </div>
+      <div style="text-align:right">
+        <div class="fx-rate">₩${usdKrw.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}</div>
+        ${heroChange}
+      </div>
+    </div>
+  `;
+
+  const others = [
+    { from:"EUR", flag:"🇪🇺", name:"유로" },
+    { from:"JPY", flag:"🇯🇵", name:"일본 엔 (100¥)", scale:100 },
+    { from:"CNY", flag:"🇨🇳", name:"중국 위안" },
+  ];
+  others.forEach(p => {
+    const cur = toKRW(p.from, data.today);
+    if (cur == null) return;
+    const scale = p.scale || 1;
+    const curShown = cur * scale;
+    let change = "";
+    if (data.prev) {
+      const prv = toKRW(p.from, data.prev);
+      if (prv != null) {
+        const diff = ((cur - prv) / prv) * 100;
+        const cls  = diff >= 0 ? "pos" : "neg";
+        change = `<div class="fx-change ${cls}">${diff>=0?"+":""}${diff.toFixed(2)}%</div>`;
+      }
+    }
+    const row = document.createElement("div");
+    row.className = "fx-row";
+    row.innerHTML = `
+      <div class="fx-pair">
+        <div class="fx-flag">${p.flag}</div>
+        <div>
+          <div class="fx-code">${p.from}/KRW</div>
+          <div class="fx-name">${p.name}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="fx-rate">₩${curShown.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}</div>
+        ${change}
+      </div>`;
+    list.appendChild(row);
+  });
+}
+loadFX();
+
+/* ---------- News (Google News RSS via rss2json) ---------- */
+async function loadNews(){
+  const container = document.getElementById("newsList");
+  try {
+    const url = "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(CONFIG.newsRSS);
+    const res = await fetch(url).then(r=>r.json());
+    if (!res || !res.items) throw new Error("empty");
+    container.innerHTML = "";
+    res.items.slice(0, CONFIG.newsCount).forEach((item, i) => {
+      const a = document.createElement("a");
+      a.href = item.link; a.target = "_blank"; a.rel = "noopener";
+      a.className = "news-item";
+      // 제목에서 "- 언론사명" 분리
+      const m = item.title.match(/^(.*?)(?:\s-\s([^-]+))?$/);
+      const title = m ? m[1] : item.title;
+      const source = (m && m[2]) ? m[2] : (item.author || "");
+      const time = new Date(item.pubDate).toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit" });
+      a.innerHTML = `
+        <div class="news-num">${String(i+1).padStart(2,"0")}</div>
+        <div class="news-content">
+          <div class="news-title">${title}</div>
+          <div class="news-meta">${source ? source + " · " : ""}${time}</div>
+        </div>`;
+      container.appendChild(a);
+    });
+  } catch (e) {
+    container.innerHTML = `<div class="loader">뉴스를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</div>`;
+  }
+}
+loadNews();
+// 10 분마다 뉴스 새로고침
+setInterval(loadNews, 10 * 60 * 1000);
+setInterval(loadFX, 60 * 60 * 1000);
+</script>
+</body>
+</html>
